@@ -1,6 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Linq;
+using AutoRaffleBackend.Models;
+using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 
 namespace AutoRaffleBackend
 {
@@ -17,6 +20,14 @@ namespace AutoRaffleBackend
             new Car { Id = 1, Make = "Toyota", Model = "Corolla", Year = 2020, Price = 15000, ImageUrl = "https://example.com/toyota.jpg" },
             new Car { Id = 2, Make = "Honda", Model = "Civic", Year = 2021, Price = 18000, ImageUrl = "https://example.com/honda.jpg" }
         };
+
+            private static List<Ticket> tickets = new List<Ticket>();
+            private readonly RaffleDbContext _context;
+
+            public CarsController(RaffleDbContext context)
+            {
+                _context = context;
+            }
 
             // Endpoint pentru afișarea tuturor mașinilor
             [HttpGet]
@@ -69,18 +80,67 @@ namespace AutoRaffleBackend
 
                 return Ok(filteredCars);
             }
+
+
+            [HttpPost("{id}/tickets")]
+            public async Task<IActionResult> GenerateTickets(int id, [FromQuery] decimal ticketPrice)
+            {
+                var car = await _context.Cars.FindAsync(id);
+                if (car == null) return NotFound("Car not found.");
+
+                int ticketCount = (int)(car.Price / ticketPrice);
+                var tickets = new List<Ticket>();
+
+                for (int i = 0; i < ticketCount; i++)
+                {
+                    tickets.Add(new Ticket { CarId = car.Id, BuyerName = null });
+                }
+
+                _context.Tickets.AddRange(tickets);
+                await _context.SaveChangesAsync();
+
+                return Ok(tickets);
+            }
+
+
+
+            [HttpPost("{id}/buy-ticket")]
+            public async Task<IActionResult> BuyTicket(int id, [FromBody] string buyerName)
+            {
+                var ticket = await _context.Tickets
+                    .Where(t => t.CarId == id && t.BuyerName == null)
+                    .FirstOrDefaultAsync();
+
+                if (ticket == null) return NotFound("No tickets available for this car.");
+
+                ticket.BuyerName = buyerName;
+                await _context.SaveChangesAsync();
+
+                return Ok(ticket);
+            }
+
+
+            [HttpGet("{id}/tickets/available")]
+            public IActionResult GetAvailableTickets(int id)
+            {
+                var availableTickets = tickets.Where(t => t.CarId == id && t.BuyerName == null).ToList();
+
+                if (!availableTickets.Any())
+                {
+                    return NotFound("No tickets available for this car.");
+                }
+
+                return Ok(availableTickets);
+            }
+
+
+            public class TicketPurchaseRequest
+            {
+                public string buyerName { get; set; }
+            }
+            
         }
 
-        // Modelul pentru mașini
-        public class Car
-        {
-            public int Id { get; set; }
-            public string Make { get; set; }
-            public string Model { get; set; }
-            public int Year { get; set; }
-            public decimal Price { get; set; }
-            public string ImageUrl { get; set; }
-        }
     }
 
 }
