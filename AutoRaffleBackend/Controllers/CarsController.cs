@@ -31,8 +31,9 @@ namespace AutoRaffleBackend
 
             // Endpoint pentru afișarea tuturor mașinilor
             [HttpGet]
-            public IActionResult GetCars()
+            public async Task<IActionResult> GetAllCars()
             {
+                var cars = await _context.Cars.ToListAsync(); // Preia toate mașinile din baza de date
                 return Ok(cars);
             }
 
@@ -50,10 +51,10 @@ namespace AutoRaffleBackend
 
             // Endpoint pentru adăugarea unei mașini noi
             [HttpPost]
-            public IActionResult AddCar([FromBody] Car car)
+            public async Task<IActionResult> AddCar([FromBody] Car car)
             {
-                car.Id = cars.Count + 1; // Generare ID unic
-                cars.Add(car);
+                _context.Cars.Add(car); // Adaugă mașina în baza de date
+                await _context.SaveChangesAsync(); // Salvează modificările în baza de date
                 return CreatedAtAction(nameof(GetCarById), new { id = car.Id }, car);
             }
 
@@ -93,7 +94,7 @@ namespace AutoRaffleBackend
 
                 for (int i = 0; i < ticketCount; i++)
                 {
-                    tickets.Add(new Ticket { CarId = car.Id, BuyerName = null });
+                    tickets.Add(new Ticket {CarId = car.Id, BuyerName = null });
                 }
 
                 _context.Tickets.AddRange(tickets);
@@ -121,9 +122,11 @@ namespace AutoRaffleBackend
 
 
             [HttpGet("{id}/tickets/available")]
-            public IActionResult GetAvailableTickets(int id)
+            public async Task<IActionResult> GetAvailableTickets(int id)
             {
-                var availableTickets = tickets.Where(t => t.CarId == id && t.BuyerName == null).ToList();
+                var availableTickets = await _context.Tickets
+                    .Where(t => t.CarId == id && t.BuyerName == null) // Preia biletele nevândute
+                    .ToListAsync();
 
                 if (!availableTickets.Any())
                 {
@@ -132,6 +135,7 @@ namespace AutoRaffleBackend
 
                 return Ok(availableTickets);
             }
+
 
 
             public class TicketPurchaseRequest
