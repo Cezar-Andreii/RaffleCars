@@ -1,0 +1,48 @@
+.winners-page {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.winners-page h1 {
+    text-align: center;
+    margin-bottom: 2rem;
+    color: #333;
+}
+
+.winners-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+}
+
+.winner-card {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+    padding: 1.5rem;
+}
+
+.winner-card:hover {
+    transform: translateY(-5px);
+}
+
+.winner-info h3 {
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.winner-info .prize {
+    color: #007bff;
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+}
+
+.winner-details {
+    display: flex;
+    justify-content: space-between;
+    color: #666;
+    font-size: 0.9rem;
+}

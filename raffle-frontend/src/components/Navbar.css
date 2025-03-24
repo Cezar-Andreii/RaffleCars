@@ -1,0 +1,74 @@
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background-color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand a {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #333;
+    text-decoration: none;
+}
+
+.navbar-links {
+    display: flex;
+    gap: 2rem;
+}
+
+.navbar-links a {
+    color: #666;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.navbar-links a:hover {
+    color: #007bff;
+}
+
+.navbar-auth {
+    display: flex;
+    gap: 1rem;
+}
+
+.btn-login,
+.btn-register {
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.btn-login {
+    color: #007bff;
+    border: 1px solid #007bff;
+}
+
+.btn-register {
+    background-color: #007bff;
+    color: white;
+}
+
+.btn-login:hover {
+    background-color: #f8f9fa;
+}
+
+.btn-register:hover {
+    background-color: #0056b3;
+}
+
+.btn-add-raffle {
+    background-color: #28a745;
+    color: white !important;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+}
+
+.btn-add-raffle:hover {
+    background-color: #218838;
+    color: white !important;
+}
