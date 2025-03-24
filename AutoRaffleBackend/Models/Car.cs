@@ -8,5 +8,8 @@
         public int Year { get; set; }
         public decimal Price { get; set; }
         public string ImageUrl { get; set; }
+        public DateTime? DrawingTime { get; set; }
+
+        public ICollection<Ticket> Tickets { get; set; }
     }
 }

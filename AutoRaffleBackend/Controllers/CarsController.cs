@@ -4,6 +4,7 @@ using System.Linq;
 using AutoRaffleBackend.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 
 namespace AutoRaffleBackend
 {
@@ -14,30 +15,29 @@ namespace AutoRaffleBackend
         [Route("api/[controller]")]
         public class CarsController : ControllerBase
         {
-            // Lista mock-up pentru stocarea mașinilor
             private static List<Car> cars = new List<Car>
         {
-            new Car { Id = 1, Make = "Toyota", Model = "Corolla", Year = 2020, Price = 15000, ImageUrl = "https://example.com/toyota.jpg" },
-            new Car { Id = 2, Make = "Honda", Model = "Civic", Year = 2021, Price = 18000, ImageUrl = "https://example.com/honda.jpg" }
         };
 
             private static List<Ticket> tickets = new List<Ticket>();
             private readonly RaffleDbContext _context;
 
-            public CarsController(RaffleDbContext context)
+            private readonly IConfiguration _configuration;
+
+            public CarsController(IConfiguration configuration, RaffleDbContext context)
             {
+                _configuration = configuration;
                 _context = context;
             }
 
-            // Endpoint pentru afișarea tuturor mașinilor
+
             [HttpGet]
             public async Task<IActionResult> GetAllCars()
             {
-                var cars = await _context.Cars.ToListAsync(); // Preia toate mașinile din baza de date
+                var cars = await _context.Cars.ToListAsync(); 
                 return Ok(cars);
             }
 
-            // Endpoint pentru afișarea unei mașini după ID
             [HttpGet("{id}")]
             public IActionResult GetCarById(int id)
             {
@@ -49,16 +49,15 @@ namespace AutoRaffleBackend
                 return Ok(car);
             }
 
-            // Endpoint pentru adăugarea unei mașini noi
             [HttpPost]
             public async Task<IActionResult> AddCar([FromBody] Car car)
             {
-                _context.Cars.Add(car); // Adaugă mașina în baza de date
-                await _context.SaveChangesAsync(); // Salvează modificările în baza de date
+                car.DrawingTime = DateTime.UtcNow.AddMinutes(5);
+                _context.Cars.Add(car);
+                await _context.SaveChangesAsync();
                 return CreatedAtAction(nameof(GetCarById), new { id = car.Id }, car);
             }
 
-            // Endpoint pentru ștergerea unei mașini
             [HttpDelete("{id}")]
             public IActionResult DeleteCar(int id)
             {
@@ -71,7 +70,6 @@ namespace AutoRaffleBackend
                 return NoContent();
             }
 
-            // Endpoint pentru filtrarea mașinilor (după marcă și/sau preț maxim)
             [HttpGet("filter")]
             public IActionResult FilterCars([FromQuery] string? make, [FromQuery] decimal? maxPrice)
             {
@@ -125,7 +123,7 @@ namespace AutoRaffleBackend
             public async Task<IActionResult> GetAvailableTickets(int id)
             {
                 var availableTickets = await _context.Tickets
-                    .Where(t => t.CarId == id && t.BuyerName == null) // Preia biletele nevândute
+                    .Where(t => t.CarId == id && t.BuyerName == null) 
                     .ToListAsync();
 
                 if (!availableTickets.Any())
@@ -135,6 +133,66 @@ namespace AutoRaffleBackend
 
                 return Ok(availableTickets);
             }
+
+            [HttpGet("{id}/winner")]
+            public IActionResult GetWinner(int id)
+            {
+                var ticketsForCar = _context.Tickets
+                    .Where(t => t.CarId == id && t.BuyerName != null)
+                    .ToList();
+
+                if (!ticketsForCar.Any())
+                {
+                    return NotFound("No tickets sold for this car.");
+                }
+
+                var random = new Random();
+                var winner = ticketsForCar[random.Next(ticketsForCar.Count)];
+
+                // Creează mesajul câștigătorului
+                var message = $"Felicitări, {winner.BuyerName}! Ai câștigat o mașină {winner.Car.Make} {winner.Car.Model}!";
+                Console.WriteLine($"Mesaj pentru câștigător: {message}");
+
+                // Comentează trimiterea SMS-ului pentru testare
+                // smsService.SendSms("+40[numar_verificat]", message);
+
+                return Ok(new { Message = "Câștigător selectat, dar SMS-ul nu a fost trimis.", Winner = winner });
+            }
+
+
+
+            [HttpGet("test-sms")]
+            public IActionResult TestSms()
+            {
+                // Preia valorile din configurație
+                var accountSid = _configuration["Twilio:AccountSid"];
+                var authToken = _configuration["Twilio:AuthToken"];
+                var fromPhoneNumber = _configuration["Twilio:PhoneNumber"];
+
+                // Afișează valorile în consolă pentru debugging
+                Console.WriteLine($"Account SID: {accountSid}");
+                Console.WriteLine($"Auth Token: {authToken}");
+                Console.WriteLine($"From Phone Number: {fromPhoneNumber}");
+
+                // Verifică dacă valorile sunt valide
+                if (string.IsNullOrEmpty(accountSid) || string.IsNullOrEmpty(authToken) || string.IsNullOrEmpty(fromPhoneNumber))
+                {
+                    return BadRequest("Una sau mai multe valori Twilio sunt null sau goale.");
+                }
+
+                // Încearcă să trimiți un SMS
+                try
+                {
+                    var smsService = new SmsService(_configuration);
+                    smsService.SendSms("+40761234567", "Mesaj de test din aplicație");
+                    return Ok("SMS trimis cu succes!");
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest($"Eroare: {ex.Message}");
+                }
+            }
+
 
 
 

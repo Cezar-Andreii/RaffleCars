@@ -13,7 +13,10 @@ namespace AutoRaffleBackend
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Car>().HasKey(c => c.Id);
-            modelBuilder.Entity<Ticket>().HasKey(t => t.Id);
+            modelBuilder.Entity<Ticket>()
+                .HasOne(t => t.Car) // Relație către Car
+                .WithMany(c => c.Tickets) // Mașina poate avea mai multe bilete
+                .HasForeignKey(t => t.CarId);
             modelBuilder.Entity<Ticket>()
                 .Property(t => t.BuyerName)
                 .IsRequired(false); // Permite valori NULL pentru BuyerName
